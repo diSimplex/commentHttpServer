@@ -118,7 +118,7 @@ int curledRequest(int port, char *testFileName, char *responseKey) {
   memset(cmdBuffer, 0, BUFFER_SIZE+1) ;
   if (snprintf(
     cmdBuffer, BUFFER_SIZE,
-    "curl -F 'data=@%s' http://127.0.0.1:%d", testFilePath, port
+    "curl --silent -F 'data=@%s' http://127.0.0.1:%d", testFilePath, port
   ) < 0 ) {
   	printf("Could not create cmd for %s\n", testFilePath) ;
   	return FALSE;

@@ -17,4 +17,5 @@ COPY --from=build /chs/commentHttpServer /chs
 
 WORKDIR /chs
 
-ENTRYPOINT ["/chs/commentHttpServer", "/comments", "8080", "10"]
+ENTRYPOINT ["/chs/commentHttpServer", "/comments", "/logs"]
+CMD ["9090", "9091", "9092", "9093", "9094", "9095", "9096", "9097", "9098", "9099"]

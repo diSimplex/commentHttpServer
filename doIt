@@ -17,6 +17,7 @@ removeImage () {
 }
 
 buildImage () {
+  make
   if ! podman image exists comment-http-server-test ; then
     podman build . --tag comment-http-server-test
   fi
@@ -24,15 +25,17 @@ buildImage () {
 
 runContainer () {
   buildImage
-	podman run                           \
+	podman run -it                       \
 	  --volume $(pwd)/comments:/comments \
-	  --publish 9090-9099:8080-8089      \
+	  --volume $(pwd)/logs:/logs         \
+	  --publish 9090-9099:9090-9099      \
 	  --name comment-http-server-test    \
 	  comment-http-server-test
 }
 
 testContainer () {
-  echo "Here be dragons!"
+  make
+  ./testClient 9093
 }
 
 help () {
