@@ -24,12 +24,14 @@ buildImage () {
 }
 
 runContainer () {
+  rm -rf comments/*
+  rm -rf logs/*
   buildImage
-	podman run -it                       \
-	  --volume $(pwd)/comments:/comments \
-	  --volume $(pwd)/logs:/logs         \
-	  --publish 9090-9099:9090-9099      \
-	  --name comment-http-server-test    \
+	podman run -it                            \
+	  --volume $(pwd)/comments:/comments      \
+	  --volume $(pwd)/logs:/logs              \
+	  --publish 127.0.0.1:9090-9099:9090-9099 \
+	  --name comment-http-server-test         \
 	  comment-http-server-test
 }
 
