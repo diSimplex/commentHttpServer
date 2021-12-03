@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# This bash script builds, runs and tests podman images and containers for
+# running comment-http-server
+
+removeContainer () {
+  if podman container exists comment-http-server-test ; then
+    podman container rm comment-http-server-test
+  fi
+}
+
+removeImage () {
+  removeContainer
+  if podman image exists comment-http-server-test ; then
+    podman image rm comment-http-server-test
+  fi
+}
+
+buildImage () {
+  if ! podman image exists comment-http-server-test ; then
+    podman build . --tag comment-http-server-test
+  fi
+}
+
+runContainer () {
+  buildImage
+	podman run                           \
+	  --volume $(pwd)/comments:/comments \
+	  --publish 9090-9099:8080-8089      \
+	  --name comment-http-server-test    \
+	  comment-http-server-test
+}
+
+testContainer () {
+  echo "Here be dragons!"
+}
+
+help () {
+	echo "usage: doIt <command>"
+	echo ""
+	echo "remove  removes the comment-http-server-test image"
+	echo "build   builds the comment-http-server-test image if it does not already exist"
+	echo "run     runs a container using an existing comment-http-server-test image"
+	echo "test    runs and test a comment-http-server-test based container"
+}
+
+if test $# -ne 1 ; then
+  echo "usage: doIt <command>"
+  exit 1
+fi
+
+if test $1 = "remove" ; then
+  removeImage
+elif test $1 = "build" ; then
+  buildImage
+elif test $1 = "run" ; then
+  runContainer
+elif test $1 = "test" ; then
+  testContainer
+elif test $1 = "help" ; then
+  help
+else
+  echo "unrecognized command"
+  echo ""
+  help
+  exit 1
+fi

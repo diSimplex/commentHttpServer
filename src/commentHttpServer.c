@@ -36,6 +36,9 @@ The signal and zombie handling have been inspired by:
 #include <netinet/in.h>
 #include <time.h>
 
+#define logger(args...) \
+  fprintf(stdout,##args) ; fflush(stdout)
+
 #define BUFFER_SIZE 8096
 
 char *requestTooLarge =
@@ -106,7 +109,7 @@ void createWorkerPids(size_t aMaxNumWorkers) {
 	memset(workerPids, 0, sizeof(pid_t)*maxNumWorkers) ;
 	curNumWorkers = 0 ;
 
-  printf("%d: Created workerPids(%ld)[%ld]<%p>\n", myPid, curNumWorkers, maxNumWorkers, workerPids) ;
+  logger("%d: Created workerPids(%ld)[%ld]<%p>\n", myPid, curNumWorkers, maxNumWorkers, workerPids) ;
 }
 
 void clearWorkerPids(void) {
@@ -117,11 +120,11 @@ void clearWorkerPids(void) {
 	curNumWorkers = 0 ;
 	workerPids    = 0 ;
 
-  printf("%d: Cleared workerPids (%ld)[%ld]<%p>\n", myPid, curNumWorkers, maxNumWorkers, workerPids) ;
+  logger("%d: Cleared workerPids (%ld)[%ld]<%p>\n", myPid, curNumWorkers, maxNumWorkers, workerPids) ;
 }
 
 void addToWorkerPids(pid_t aNewWorker) {
-  printf("%d: Registering worker %d (%ld)[%ld]<%p>\n", myPid, aNewWorker, curNumWorkers, maxNumWorkers, workerPids) ;
+  logger("%d: Registering worker %d (%ld)[%ld]<%p>\n", myPid, aNewWorker, curNumWorkers, maxNumWorkers, workerPids) ;
   if (workerPids) {
 	  if (curNumWorkers < maxNumWorkers) {
   		workerPids[curNumWorkers] = aNewWorker ;
@@ -131,7 +134,7 @@ void addToWorkerPids(pid_t aNewWorker) {
 }
 
 void removeFromWorkerPids(pid_t aWorkerPid) {
-  printf("%d: Removing worker %d (%ld)[%ld]<%p>\n", myPid, aWorkerPid, curNumWorkers, maxNumWorkers, workerPids) ;
+  logger("%d: Removing worker %d (%ld)[%ld]<%p>\n", myPid, aWorkerPid, curNumWorkers, maxNumWorkers, workerPids) ;
   if (workerPids) {
 	  for (size_t aWorker = 0 ; aWorker < maxNumWorkers; aWorker++){
   		if (workerPids[aWorker] == aWorkerPid) {
@@ -143,13 +146,13 @@ void removeFromWorkerPids(pid_t aWorkerPid) {
 }
 
 size_t numWorkersRemaining(void) {
-  printf("%d: numWorkersRemaining (%ld)[%ld]<%p>\n", myPid, curNumWorkers, maxNumWorkers, workerPids);
+  logger("%d: numWorkersRemaining (%ld)[%ld]<%p>\n", myPid, curNumWorkers, maxNumWorkers, workerPids);
   size_t numActiveWorkers = 0 ;
   for (size_t aWorker = 0 ; aWorker < curNumWorkers ; aWorker++ ) {
-    printf("%d: workerPids[%ld] = [%d]\n", myPid, aWorker, workerPids[aWorker]) ;
+    logger("%d: workerPids[%ld] = [%d]\n", myPid, aWorker, workerPids[aWorker]) ;
   	if (workerPids[aWorker]) numActiveWorkers++ ;
   }
-  printf("%d: remaining: numActiveWorkers %ld\n", myPid, numActiveWorkers) ;
+  logger("%d: remaining: numActiveWorkers %ld\n", myPid, numActiveWorkers) ;
   return numActiveWorkers ;
 }
 
@@ -192,7 +195,7 @@ void installSignalHanders(void) {
 */
 int validUft8( char *buffer, int bytesRead) {
   if ( (int)(strlen(buffer)) != bytesRead ) {
-    printf("%d: ERROR: incorrect buffer size validating utf-8\n", myPid) ;
+    logger("%d: ERROR: incorrect buffer size validating utf-8\n", myPid) ;
     return FALSE ;
   }
   char *bufferEnd = buffer + bytesRead ;
@@ -298,11 +301,11 @@ void sendResponse(int httpFD, char *response) {
 
 void runChildOnPort(int port, char* commentDir) {
 
-	printf("%d: listening on port: %d\n", myPid, port) ;
+	logger("%d: listening on port: %d\n", myPid, port) ;
 
   int listeningFD = socket( AF_INET, SOCK_STREAM, 0 ) ;
   if( listeningFD < 0 ) {
-    printf("%d: ERROR: could not open listening socket\n", myPid) ;
+    logger("%d: ERROR: could not open listening socket\n", myPid) ;
     exit(-1) ;
   }
 
@@ -314,19 +317,19 @@ void runChildOnPort(int port, char* commentDir) {
   serv_addr.sin_port = htons(port);
 
   if( bind( listeningFD, (struct sockaddr *)&serv_addr,sizeof(serv_addr) ) < 0 ) {
-    printf("%d: ERROR: could not bind to socket\n", myPid) ;
+    logger("%d: ERROR: could not bind to socket\n", myPid) ;
     exit(-1) ;
   }
   if( listen( listeningFD, 64 ) < 0 ) {
-    printf("%d: ERROR: could not listen to bound socket\n", myPid) ;
+    logger("%d: ERROR: could not listen to bound socket\n", myPid) ;
     exit(-1) ;
   }
   for ( size_t requestNum = 1 ; continueHandlingRequests ; requestNum++ ) {
-    printf("%d: \n", myPid) ;
+    logger("%d: \n", myPid) ;
     socklen_t length = sizeof(cli_addr);
     int httpFD = accept( listeningFD, (struct sockaddr *)&cli_addr, &length) ;
     if ( httpFD < 0 ) {
-    	printf("%d: ERROR: could not accept new connection for request: %ld\n", myPid, requestNum) ;
+    	logger("%d: ERROR: could not accept new connection for request: %ld\n", myPid, requestNum) ;
     	continue ;
     }
 
@@ -336,25 +339,25 @@ void runChildOnPort(int port, char* commentDir) {
     clock_t begin = clock();
     int bytesRead = readRequest( httpFD, buffer, BUFFER_SIZE );
     if ( bytesRead == -2 ) {
-    	printf("%d: ERROR: invalid UTF-8 while reading request %ld\n", myPid, requestNum);
+    	logger("%d: ERROR: invalid UTF-8 while reading request %ld\n", myPid, requestNum);
     	sendResponse(httpFD, invalidUft8) ;
     	continue;
     }
     if ( bytesRead < 1 ) {
-    	printf("%d: ERROR: Could not read request: %ld\n", myPid, requestNum) ;
+    	logger("%d: ERROR: Could not read request: %ld\n", myPid, requestNum) ;
     	sendResponse(httpFD, couldNotCollectComment) ;
     	continue ;
     }
     clock_t endRead = clock();
 
     if ( BUFFER_SIZE <= bytesRead ) {
-    	printf("%d: ERROR: request too large: %ld\n", myPid, requestNum) ;
+    	logger("%d: ERROR: request too large: %ld\n", myPid, requestNum) ;
     	sendResponse(httpFD, requestTooLarge) ;
     	continue ;
     }
 
     if ( ! validUft8(buffer, bytesRead) ) {
-    	printf("%d: ERROR: invalid utf8 for request: %ld\n", myPid, requestNum) ;
+    	logger("%d: ERROR: invalid utf8 for request: %ld\n", myPid, requestNum) ;
     	sendResponse(httpFD, invalidUft8) ;
     	continue ;
     }
@@ -366,7 +369,7 @@ void runChildOnPort(int port, char* commentDir) {
     struct tm *timeNowStruct = localtime(&timeNow) ;
     size_t timeSize = strftime(asciiTime, 200, "%Y-%m-%d_%H-%M-%S", timeNowStruct) ;
     if ( timeSize == 0 ) {
-    	printf("%d: ERROR: Could not construct asciiTime for request: %ld\n", myPid, requestNum) ;
+    	logger("%d: ERROR: Could not construct asciiTime for request: %ld\n", myPid, requestNum) ;
     	sendResponse(httpFD, couldNotCollectComment) ;
     	continue ;
     }
@@ -376,26 +379,26 @@ void runChildOnPort(int port, char* commentDir) {
       commentPath, "%s/%s_%d.comment", commentDir, asciiTime, port
      ) ;
     if ( commentPathSize < 1 ) {
-    	printf("%d: ERROR: Could not construct commentPath for request: %ld\n", myPid, requestNum) ;
+    	logger("%d: ERROR: Could not construct commentPath for request: %ld\n", myPid, requestNum) ;
     	sendResponse(httpFD, couldNotCollectComment) ;
     	continue ;
     }
     FILE *commentFile = fopen(commentPath, "w") ;
     if ( !commentFile ) {
-    	printf("%d: ERROR: could not open commentFile for request: %ld\n", myPid, requestNum) ;
+    	logger("%d: ERROR: could not open commentFile for request: %ld\n", myPid, requestNum) ;
     	sendResponse(httpFD, couldNotCollectComment) ;
     	continue ;
     }
 
     int bytesWritten = fwrite( buffer, 1, bytesRead, commentFile ) ;
     if ( bytesWritten != bytesRead ) {
-    	printf("%d: ERROR: could not write commentFile for request: %ld\n", myPid, requestNum) ;
+    	logger("%d: ERROR: could not write commentFile for request: %ld\n", myPid, requestNum) ;
     	sendResponse(httpFD, couldNotCollectComment) ;
     	continue ;
     }
 
     fclose(commentFile) ;
-    printf("%d: SUCCESS: captured comment: [%s] for request: %ld\n", myPid, commentPath, requestNum) ;
+    logger("%d: SUCCESS: captured comment: [%s] for request: %ld\n", myPid, commentPath, requestNum) ;
   	sendResponse(httpFD, thankYou) ;
     clock_t endWrite = clock();
 
@@ -404,16 +407,16 @@ void runChildOnPort(int port, char* commentDir) {
     double writeTime = (double)( endWrite - endValid ) / CLOCKS_PER_SEC ;
     double totalTime = (double)( endWrite - begin    ) / CLOCKS_PER_SEC ;
 
-    printf("%d:%ld:  readTime: %f\n", myPid, requestNum, readTime) ;
-    printf("%d:%ld: validTime: %f\n", myPid, requestNum, validTime) ;
-    printf("%d:%ld: writeTime: %f\n", myPid, requestNum, writeTime) ;
-    printf("%d:%ld: totalTime: %f\n", myPid, requestNum, totalTime) ;
+    logger("%d:%ld:  readTime: %f\n", myPid, requestNum, readTime) ;
+    logger("%d:%ld: validTime: %f\n", myPid, requestNum, validTime) ;
+    logger("%d:%ld: writeTime: %f\n", myPid, requestNum, writeTime) ;
+    logger("%d:%ld: totalTime: %f\n", myPid, requestNum, totalTime) ;
   }
 }
 
 int main(int argc, char **argv) {
   if (argc < 4) {
-  	printf("Usage: commentHttpServer <commentDir> <firstPort> <numberWorkers>\n") ;
+  	logger("Usage: commentHttpServer <commentDir> <firstPort> <numberWorkers>\n") ;
   	exit(-1) ;
   }
 
@@ -423,43 +426,43 @@ int main(int argc, char **argv) {
   int  numberWorkers = atoi(argv[3]) ;
 
   if ((numberWorkers < 1) || (MAX_NUM_WORKERS < numberWorkers)) {
-  	printf("The number of workers MUST be between 1 and %d\n", MAX_NUM_WORKERS) ;
+  	logger("The number of workers MUST be between 1 and %d\n", MAX_NUM_WORKERS) ;
   	exit(-1);
   }
   createWorkerPids(numberWorkers) ;
   installSignalHanders() ;
 
-  printf("\n") ;
-	printf("Started loggingHttpServer\n") ;
-	printf("comment directory: [%s]\n", commentDir) ;
-  printf("       first port: %d\n", firstPort) ;
-  printf("number of workers: %d\n", numberWorkers) ;
+  logger("\n") ;
+	logger("Started loggingHttpServer\n") ;
+	logger("comment directory: [%s]\n", commentDir) ;
+  logger("       first port: %d\n", firstPort) ;
+  logger("number of workers: %d\n", numberWorkers) ;
 
   for (int workerNum = 0; workerNum < numberWorkers; workerNum++) {
   	pid_t workerPid = fork() ;
   	int port = firstPort + workerNum ;
   	if (workerPid > 0 ) {
   		// Parent process...
-  	  printf("%d: forked a new worker: %d\n", myPid, workerPid) ;
+  	  logger("%d: forked a new worker: %d\n", myPid, workerPid) ;
   		addToWorkerPids(workerPid) ;
   		continue ;
   	}	else if (workerPid == 0 ) {
   		// Child process...
   		myPid = getpid() ;
-  		printf("%d: Starting child\n", myPid) ;
+  		logger("%d: Starting child\n", myPid) ;
   		clearWorkerPids() ;
       runChildOnPort(port, commentDir) ;
-      printf("%d: Finished child\n", myPid) ;
+      logger("%d: Finished child\n", myPid) ;
       return 0 ;
   	} else {
   		// error!
-  		printf("%d: Could not fork worker: %d\n", myPid, workerNum ) ;
+  		logger("%d: Could not fork worker: %d\n", myPid, workerNum ) ;
   	}
   }
 
-  printf("%d: About to wait on workers %ld\n", myPid, numWorkersRemaining()) ;
+  logger("%d: About to wait on workers %ld\n", myPid, numWorkersRemaining()) ;
   while(0 < numWorkersRemaining()) {
-    printf("%d: waiting on children: %ld\n", myPid, numWorkersRemaining()) ;
+    logger("%d: waiting on children: %ld\n", myPid, numWorkersRemaining()) ;
   	pid_t deadChild = wait(NULL) ;
   	if (0 < deadChild) {
   	  removeFromWorkerPids(deadChild) ;
@@ -472,5 +475,5 @@ int main(int argc, char **argv) {
     // ignore error and try again
   }
 
-  printf("%d: Done!\n", myPid) ;
+  logger("%d: Done!\n", myPid) ;
 }
