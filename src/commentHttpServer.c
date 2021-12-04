@@ -45,37 +45,37 @@ FILE *myLogFile = NULL;
 char *requestTooLarge =
   "HTTP/1.1 413 Request too large \n"
   "Content-Type: text/html\n\n"
-  "<html><body>"
-  "<h>Your comment is too large</h>\n"
-  "<p>Long comments are really papers in their own right. "
-  "Please consider publishing your own paper and then providing a "
+  "<html><head><title>Your comment is too large</title></head><body>"
+  "<h1>Your comment is too large</h1>\n"
+  "<p>Long comments are really papers in their own right.</p> "
+  "<p>Please consider publishing your own paper and then providing a "
   "reference to it as a comment.</p>"
   "</body></html>" ;
 
 char *invalidUft8 =
   "HTTP/1.1 415 Invalid UTF-8 \n"
   "Content-Type: text/html\n\n"
-  "<html><body>"
-  "<h>Your comment is not valid utf-8</h>\n"
+  "<html><head><title>Your comment is not valid utf-8</title></head><body>"
+  "<h1>Your comment is not valid utf-8</h1>\n"
   "<p>We do not accept comments which are not valid utf-8</p>"
   "</body></html>" ;
 
 char *couldNotCollectComment =
   "HTTP/1.1 500 Server error \n"
   "Content-Type: text/html\n\n"
-  "<html><body>"
-  "<h>Sorry... we could not record you comment at the moment</h>"
-  "Something went wrong with our server and we could not deal with your "
-  "comment. Please try again later."
+  "<html><head><title>Sorry... we could not record you comment at the moment</title></head><body>"
+  "<h1>Sorry... we could not record you comment at the moment</h1>"
+  "<p>Something went wrong with our server and we could not deal with your "
+  "comment. Please try again later.</p>"
   "</body></html>" ;
 
 char *thankYou =
   "HTTP/1.1 200 OK \n"
   "Content-Type: text/html\n\n"
-  "<html><body>"
-  "<h>Thank you for your comment</h>"
-  "Thank you for your comment. Our editors will consider your comment to "
-  "determine if it conforms to our comment criteria."
+  "<html><head><title>Thank you for your comment</title></head><body>"
+  "<h1>Thank you for your comment</h1>"
+  "<p>Thank you for your comment. Our editors will consider your comment to "
+  "determine if it conforms to our comment criteria.</p>"
   "</body></html>" ;
 
 #define TRUE  1
